@@ -1,0 +1,42 @@
+[project]
+name = "ddpm-ood"
+version = "0.1.0"
+description = "Official PyTorch code for 'Out-of-distribution detection with denoising diffusion models'"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "lpips==0.1.4",
+    "matplotlib",
+    "torch==1.13.1",
+    "monai[nibabel]==1.2.0",
+    "monai-generative",
+    "pandas",
+    "scipy",
+    "tensorboard",
+    "tqdm",
+    "einops>=0.3.2",
+    "omegaconf==2.1.1",
+    "imageio",
+    "scikit-learn",
+    "seaborn",
+    "scikit-image",
+    "x-transformers==1.8.1",
+    "numba",
+    "medmnist",
+]
+
+[project.scripts]
+get_computer_vision_datasets_script = "src.data.get_computer_vision_datasets:main"
+train_script = "train_ddpm:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

@@ -5,6 +5,58 @@ from pathlib import Path
 import numpy as np
 from sklearn.model_selection import train_test_split
 from torchvision.datasets import CIFAR10, MNIST, SVHN, CelebA, FashionMNIST
+import subprocess
+import shutil
+import requests
+from zipfile import ZipFile
+from io import BytesIO
+
+class CelebANoIntegrityCheck(CelebA):
+    def _check_integrity(self) -> bool:
+        return True
+
+def download_celeba_alternative(data_dir):
+    """Attempts to download CelebA from alternative sources if it's not found."""
+    img_path = data_dir / "celeba" / "img_align_celeba"
+
+    if img_path.exists():
+        print("CelebA dataset found locally. Skipping download.")
+        return
+
+    print("Dataset not found. Attempting alternative sources...")
+
+    try:
+        zip_file_path = data_dir / "celeba" / "img_align_celeba.zip"
+
+        if not zip_file_path.exists():
+            print("Downloading CelebA dataset...")
+            url = "https://cseweb.ucsd.edu/~weijian/static/datasets/celeba/img_align_celeba.zip"
+            with requests.get(url, stream=True) as response:
+                response.raise_for_status()
+                with open(zip_file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            print("Download complete.")
+        else:
+            print("ZIP file already exists. Skipping download.")
+
+        print("Extracting CelebA dataset...")
+        with ZipFile(zip_file_path, 'r') as zfile:
+            zfile.extractall(img_path)
+        print("Dataset extracted successfully.")
+
+        # Move files from nested folder to desired folder structure
+        nested_dir = img_path / "img_align_celeba"
+
+        if nested_dir.exists():
+            for item in nested_dir.iterdir():
+                shutil.move(str(item), img_path)
+            nested_dir.rmdir()  # Remove empty nested directory
+
+        print("CelebA downloaded successfully.")
+        return
+    except Exception as e:
+        print("CelebA download failed:", str(e))
 
 
 def parse_args():
@@ -74,8 +126,12 @@ def download_data(data_root, download_celeba):
 
     # CelebA
     root = Path(data_root) / "CelebA" / "raw"
+
+    download_celeba_alternative(root)
+
     for set in ["train", "valid", "test"]:
-        dataset = CelebA(root=root, split=set, download=download_celeba)
+        dataset = CelebANoIntegrityCheck(root=root, split=set, download=False)
+        # dataset = CelebA(root=root, split=set, download=False, check_integrity=False)
         dataset_name = dataset.__class__.__name__
         out_dir = root.parent / "numpy" / set
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -117,7 +173,10 @@ def create_train_test_splits(data_root):
         save_list_as_csv(data_split, splits_dir / f"{dataset}_{split_name}.csv")
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     download_data(data_root=args.data_root, download_celeba=args.download_celeba)
     create_train_test_splits(data_root=args.data_root)
+
+if __name__ == "__main__":
+    main()

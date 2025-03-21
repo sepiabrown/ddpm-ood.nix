@@ -125,8 +125,11 @@ def parse_args():
     return args
 
 
-# to run using DDP, run torchrun --nproc_per_node=1 --nnodes=1 --node_rank=0  train_ddpm.py --args
-if __name__ == "__main__":
+def main():
     args = parse_args()
     trainer = DDPMTrainer(args)
     trainer.train(args)
+
+# to run using DDP, run torchrun --nproc_per_node=1 --nnodes=1 --node_rank=0  train_ddpm.py --args
+if __name__ == "__main__":
+    main()
